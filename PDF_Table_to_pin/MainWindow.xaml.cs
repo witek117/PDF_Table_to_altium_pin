@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -21,16 +23,71 @@ namespace PDF_Table_to_pin
     /// <summary>
     /// Logika interakcji dla klasy MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
         string pdfFilePath = "";
         string outPinsData = "";
         string outPinsDesc = "";
 
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void RaisePropertyChanged(string NazwaWlasciwosci)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(NazwaWlasciwosci));
+            }
+        }
+
+        public class Pin : INotifyPropertyChanged
+        {
+            private bool _selected;
+            public bool selected 
+            { 
+                get { return _selected; } 
+                set { _selected = value; OnPropertyChanged("selected"); }
+            }
+
+            public string designator { get; set; }
+            public string name { get; set; }
+            public string description { get; set; }
+
+            public Pin(string designator, string name, string description)
+            {
+                this.designator = designator;
+                this.name = name;
+                this.description = description;
+            }
+
+            public event PropertyChangedEventHandler PropertyChanged;
+            public void OnPropertyChanged(string propertyName)
+            {
+                PropertyChangedEventHandler handler = PropertyChanged;
+                if (handler != null)
+                    handler(this, new PropertyChangedEventArgs(propertyName));
+            }
+        };
+
+        public ObservableCollection<Pin> Pins { get; set; }
+        private Pin _selectedPin;
+        public Pin selectedPin
+        {
+            get { return _selectedPin; }
+            set 
+            { 
+                if (value != null)
+                {
+                    _selectedPin = value;
+                    RaisePropertyChanged("selectedPin");
+                }
+            }
+        }
 
         public MainWindow()
         {
             InitializeComponent();
+            DataContext = this;
+            Pins = new ObservableCollection<Pin>();
+            selectedPin = new Pin("0", "0", "null");
         }
 
         class Row
@@ -90,12 +147,13 @@ namespace PDF_Table_to_pin
                     }
                 }
 
-                if (data[data.Length - 1] == ',')
+                if (data.Length > 1)
                 {
-                    data = data.Remove(data.Length - 1);
+                    if (data[data.Length - 1] == ',')
+                    {
+                        data = data.Remove(data.Length - 1);
+                    }
                 }
-
-
 
                 data = data.ToCharArray()
                              .Where(c => !Char.IsWhiteSpace(c))
@@ -110,7 +168,6 @@ namespace PDF_Table_to_pin
                     }
 
                 }
-
 
                 while (data.IndexOf(",,") != -1)
                 {
@@ -135,13 +192,11 @@ namespace PDF_Table_to_pin
             {
                 return description;
             }
-
         };
 
         List<Row> ReadPage(string path, int pageNumber, int cellsNumber)
         {
             List<Row> rows = new List<Row>();
-
 
             // https://sautinsoft.com/products/pdf-focus/examples/convert-pdf-to-excel-csharp-vb-net.php
 
@@ -305,11 +360,13 @@ namespace PDF_Table_to_pin
                 ParseProgressBar.Dispatcher.Invoke(() => ParseProgressBar.Value = value, DispatcherPriority.Background);
             }
 
-            Regex rx = new Regex(@"^[A-Z]?\d+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            Regex rx = new Regex(@"^[A-Z]?\d+$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
             string outputData = "";
             outPinsData = "";
             outPinsDesc = "";
+
+            Pins.Clear();
 
             foreach (Row inrow in rows)
             {
@@ -317,15 +374,14 @@ namespace PDF_Table_to_pin
                 {
                     inrow.GetMergeCells(mergeColumnsInt.ToArray(), excludeWords);
 
-
                     outputData += inrow.cells[footprintColumn].ToString() + "\t" + inrow.GetDescription() + "\n";
                     
                     outPinsData += inrow.cells[footprintColumn].ToString() + "\n";
                     outPinsDesc += inrow.GetDescription() + "\r\n";
+
+                    Pins.Add(new Pin(inrow.cells[footprintColumn].ToString(), inrow.cells[mergeColumnsInt.ToArray()[0]].ToString(), inrow.GetDescription()));
                 }
             }
-
-            OutData.Text = outputData;
         }
 
         private void CopyPins_Click(object sender, RoutedEventArgs e)
@@ -336,6 +392,125 @@ namespace PDF_Table_to_pin
         private void CopyDesc_Click(object sender, RoutedEventArgs e)
         {
             Clipboard.SetText(outPinsDesc);
+        }
+
+        private void Control_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (Pin pin in Pins)
+            {
+                Console.WriteLine(pin.selected.ToString() + "\t" + pin.designator);
+                pin.selected = true;
+            }
+        }
+
+        private void SelectAll_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox box = e.Source as CheckBox;
+
+            bool check = box.IsChecked.Value;
+
+            foreach(Pin pin in Pins)
+            {
+                pin.selected = check;
+            }
+        }
+
+        private void ExportDescriptors_Click(object sender, RoutedEventArgs e)
+        {
+            string data = "";
+
+            foreach(Pin pin in Pins)
+            {
+                if (pin.selected)
+                {
+                    data += pin.designator + "\n";
+                }
+            }
+
+            Clipboard.SetText(data);
+        }
+
+        private void ExportNames_Click(object sender, RoutedEventArgs e)
+        {
+            string data = "";
+
+            foreach (Pin pin in Pins)
+            {
+                if (pin.selected)
+                {
+                    data += pin.name + "\n";
+                }
+            }
+
+            Clipboard.SetText(data);
+        }
+
+        private void ExportDescriptions_Click(object sender, RoutedEventArgs e)
+        {
+            string data = "";
+
+            foreach (Pin pin in Pins)
+            {
+                if (pin.selected)
+                {
+                    data += pin.description + "\n";
+                }
+            }
+
+            Clipboard.SetText(data);
+        }
+
+        private void PinSelected_Click(object sender, RoutedEventArgs e)
+        {
+
+            if (!(e.Source as CheckBox).IsChecked.Value)
+            {
+                SelectAll.IsChecked = false;
+            }
+            else
+            {
+                foreach(Pin pin in Pins)
+                {
+                    if (pin.selected == false)
+                    {
+                        SelectAll.IsChecked = false;
+                        return;
+                    }
+                }
+
+                SelectAll.IsChecked = true;
+            }
+        }
+
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            PinBox.Items.Refresh();
+        }
+
+        private void Pin_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            PinBox.Items.Refresh();
+        }
+
+        private void PinInfo_TextChanged(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                if ((e.Source as TextBox).Name == "PinDesignator")
+                {
+                    selectedPin.designator = (e.Source as TextBox).Text;
+                } 
+                else if ((e.Source as TextBox).Name == "PinName")
+                {
+                    selectedPin.name = (e.Source as TextBox).Text;
+                }
+                else if ((e.Source as TextBox).Name == "PinDescription")
+                {
+                    selectedPin.description = (e.Source as TextBox).Text;
+                }
+
+                PinBox.Items.Refresh();
+            }
         }
     }
 }
