@@ -56,6 +56,15 @@ namespace PDF_Table_to_pin
                 this.designator = designator;
                 this.name = name;
                 this.description = description;
+                this._selected = false;
+            }
+
+            public Pin(Pin pin)
+            {
+                this.designator = pin.designator;
+                this.description = pin.description;
+                this.name = pin.name;
+                this._selected = false;
             }
 
             public event PropertyChangedEventHandler PropertyChanged;
@@ -182,6 +191,11 @@ namespace PDF_Table_to_pin
                 if (data[data.Length - 1] == '/')
                 {
                     data = data.Remove(data.Length - 1);
+                }
+
+                while (data.IndexOf("//") != -1)
+                {
+                    data = data.Replace("//", "/");
                 }
 
                 description = data;
@@ -398,7 +412,7 @@ namespace PDF_Table_to_pin
         {
             foreach (Pin pin in Pins)
             {
-                Console.WriteLine(pin.selected.ToString() + "\t" + pin.designator);
+                // Console.WriteLine(pin.selected.ToString() + "\t" + pin.designator);
                 pin.selected = true;
             }
         }
@@ -511,6 +525,40 @@ namespace PDF_Table_to_pin
 
                 PinBox.Items.Refresh();
             }
+        }
+
+        private void PinBox_MenuItem_Delete(object sender, RoutedEventArgs e)
+        {
+            if (PinBox.SelectedIndex == -1)
+            {
+                return;
+            }
+
+            Pins.RemoveAt(PinBox.SelectedIndex);
+
+            PinBox.Items.Refresh();
+        }
+        
+        private void PinBox_MenuItem_New(object sender, RoutedEventArgs e)
+        {
+            if (PinBox.SelectedIndex == -1)
+            {
+                return;
+            }
+
+            Pins.Insert(PinBox.SelectedIndex + 1, new Pin("0", "0", "0"));
+            PinBox.Items.Refresh();
+        }
+
+        private void PinBox_MenuItem_Duplicate(object sender, RoutedEventArgs e)
+        {
+            if (PinBox.SelectedIndex == -1)
+            {
+                return;
+            }
+
+            Pins.Insert(PinBox.SelectedIndex + 1, new Pin(Pins[PinBox.SelectedIndex]));
+            PinBox.Items.Refresh();
         }
     }
 }

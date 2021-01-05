@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{353746AB-638A-4F09-9595-E84482374227}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <RootNamespace>PDF_Table_to_pin</RootNamespace>
     <AssemblyName>PDF_Table_to_pin</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>

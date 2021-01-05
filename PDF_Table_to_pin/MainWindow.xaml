@@ -208,12 +208,12 @@
                     <Label DockPanel.Dock="Top" BorderThickness="1" BorderBrush="#00aade" Height="1" Margin="0,5"/>
                     <DockPanel DockPanel.Dock="Top" VerticalAlignment="Stretch" >
                         <Label Content="Column Count:" Style="{StaticResource DescriprionLabel}" />
-                        <TextBox x:Name="ColumnCount" Text="14" Style="{StaticResource InputProperties}"/>
+                        <TextBox x:Name="ColumnCount" Text="12" Style="{StaticResource InputProperties}"/>
                     </DockPanel>
 
                     <DockPanel DockPanel.Dock="Top" >
                         <Label Content="Merge Columns:"  Style="{StaticResource DescriprionLabel}"/>
-                        <TextBox x:Name="MergeColumn" Text="8,12,13" Style="{StaticResource InputProperties}" />
+                        <TextBox x:Name="MergeColumn" Text="6,10,11" Style="{StaticResource InputProperties}" />
                     </DockPanel>
 
                     <DockPanel DockPanel.Dock="Top">
@@ -223,12 +223,12 @@
 
                     <DockPanel DockPanel.Dock="Top">
                         <Label Content="Start page:"  Style="{StaticResource DescriprionLabel}"/>
-                        <TextBox x:Name="StartPage" Text="51" Style="{StaticResource InputProperties}"/>
+                        <TextBox x:Name="StartPage" Text="47" Style="{StaticResource InputProperties}"/>
                     </DockPanel>
 
                     <DockPanel DockPanel.Dock="Top">
                         <Label Content="Stop page:"  Style="{StaticResource DescriprionLabel}"/>
-                        <TextBox x:Name="StopPage" Text="68" Style="{StaticResource InputProperties}"/>
+                        <TextBox x:Name="StopPage" Text="59" Style="{StaticResource InputProperties}"/>
                     </DockPanel>
 
                     <DockPanel DockPanel.Dock="Top">
@@ -293,6 +293,22 @@
 
                     <Grid Grid.Row="1" >
                         <ListBox x:Name="PinBox" ItemsSource="{Binding Pins}" Background="#181818" Foreground="White" SelectedItem="{Binding selectedPin}">
+                            <ListBox.Resources>
+
+                                <!--Defines a context menu-->
+                                <ContextMenu x:Key="MyElementMenu">
+                                    <MenuItem Header="Delete" Click="PinBox_MenuItem_Delete"/>
+                                    <MenuItem Header="New" Click="PinBox_MenuItem_New"/>
+                                    <MenuItem Header="Duplicate" Click="PinBox_MenuItem_Duplicate"/>
+                                </ContextMenu>
+
+                                <!--Sets a context menu for each ListBoxItem in the current ListBox-->
+                                <Style TargetType="{x:Type ListBoxItem}">
+                                    <Setter Property="ContextMenu" Value="{StaticResource MyElementMenu}"/>
+                                </Style>
+
+                            </ListBox.Resources>
+
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <DockPanel Height="22"  >
